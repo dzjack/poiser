@@ -2,5 +2,6 @@ const service = require('feathers-objection')
 const UserModel = require('../models').User
 
 module.exports = service({
-  model: UserModel
+  model: UserModel,
+  allowedEager: '[userIntolerances]'
 })

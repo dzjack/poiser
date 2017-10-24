@@ -1,39 +1,90 @@
 require('dotenv').config()
 const app = require('../app')
-const ingredients = require('./ingredients')
+const recipes = require('./recipes')
+const users = require('./users')
+const mealTypes = require('./mealTypes')
+const mealPreferences = require('./mealPreferences')
+const templates = require('./templates')
 
 async function seed() {
-  const [miguel] = await createUsers()
-  await createIngredients()
-  const [pastaAloPobre] = await createRecipes()
+  await createMealTypes()
+  await createTemplates()
+  await createMealPreferences()
+  const recipes = await createRecipes()
+  const [miguel] = await createUsers(users)
+  await recipesFrequency(recipes, miguel)
 }
 
-async function createRecipe() {
-  const recipeService = app.service('recipes')
-  recipeService.create({
-    name: 'pasta a lo pobre',
-    cookingTime: 20,
-    description: 'Un plato perfecto para cuando no tienes nada en la nevera',
-    steps: 'paso 1, paso 2...'
-  })
-}
-
-async function createIngredients() {
-  const ingredientsService = app.service('ingredients')
-  ingredients.forEach(ingredient =>
-    ingredientsService.create({ name: ingredient })
+async function createTemplates() {
+  const templatesService = app.service('templates')
+  return Promise.all(
+    templates.map(template => templatesService.create(template))
   )
-  await ingredientsService.create({ name: 'agua' })
 }
 
-async function createUsers() {
+async function createMealPreferences() {
+  const mealPreferencesService = app.service('mealPreferences')
+  return Promise.all(
+    mealPreferences.map(mealPreference =>
+      mealPreferencesService.create({ name: mealPreference })
+    )
+  )
+}
+
+async function createMealTypes() {
+  const mealTypesService = app.service('mealTypes')
+  return Promise.all(
+    mealTypes.map(mealType => mealTypesService.create({ name: mealType }))
+  )
+}
+
+async function createRecipes(user) {
+  const recipeService = app.service('recipes')
+  const recipesFrequencyService = app.service('recipesFrequency')
+  return Promise.all(
+    recipes.map(async function(recipe) {
+      try {
+        const ingredientIds = await createIngredients(recipe.ingredients)
+        return await recipeService.create(recipe)
+      } catch (e) {
+        console.log('error creating recipes', e)
+      }
+    })
+  )
+}
+
+async function recipesFrequency(recipes, user) {
+  const recipesFrequencyService = app.service('recipesFrequency')
+  return Promise.all(
+    recipes.map(async function(recipe) {
+      try {
+        return await recipesFrequencyService.create({
+          recipeId: recipe.id,
+          userId: user.id
+        })
+      } catch (e) {
+        console.log('error creating recipe frequency', e)
+      }
+    })
+  )
+}
+
+async function createIngredients(ingredients) {
+  const ingredientsService = app.service('ingredients')
+  return Promise.all(
+    ingredients.map(function(ingredient) {
+      return ingredientsService.create({ name: ingredient })
+    })
+  )
+}
+
+async function createUsers(users) {
   const userService = app.service('users')
-  const miguel = await userService.create({
-    email: 'miguel@redradix.com',
-    password: 'redradix',
-    cookingTime: 15
-  })
-  return [miguel]
+  return Promise.all(
+    users.map(function(user) {
+      return userService.create(user)
+    })
+  )
 }
 
 module.exports = seed

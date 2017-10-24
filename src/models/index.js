@@ -5,6 +5,7 @@ class Ingredient extends Model {}
 class Recipe extends Model {}
 class RecipeFrequency extends Model {}
 class User extends Model {}
+class UserIntolerance extends Model {}
 class MealPreference extends Model {}
 class UserMealPreference extends Model {}
 class Template extends Model {}
@@ -15,7 +16,6 @@ Ingredient.tableName = 'ingredient'
 Ingredient.jsonSchema = {
   type: 'object',
   properties: {
-    id: { type: 'integer' },
     name: { type: 'string', minLength: 1, maxLength: 255 }
   }
 }
@@ -24,9 +24,9 @@ Ingredient.relationMappings = {
     relation: Model.ManyToManyRelation,
     modelClass: Recipe,
     join: {
-      from: 'ingredient.id',
+      from: 'ingredient.name',
       through: {
-        from: 'recipeIngredient.ingredientId',
+        from: 'recipeIngredient.ingredientName',
         to: 'recipeIngredient.recipeId'
       },
       to: 'recipe.id'
@@ -53,9 +53,9 @@ Recipe.relationMappings = {
       from: 'recipe.id',
       through: {
         from: 'recipeIngredient.recipeId',
-        to: 'recipeIngredient.ingredientId'
+        to: 'recipeIngredient.ingredientName'
       },
-      to: 'ingredient.id'
+      to: 'ingredient.name'
     }
   },
   mealType: {
@@ -65,9 +65,9 @@ Recipe.relationMappings = {
       from: 'recipe.id',
       through: {
         from: 'recipeMealType.recipeId',
-        to: 'recipeMealType.mealType.id'
+        to: 'recipeMealType.mealTypeName'
       },
-      to: 'mealType.id'
+      to: 'mealType.name'
     }
   }
 }
@@ -76,9 +76,29 @@ RecipeFrequency.tableName = 'recipeFrequency'
 RecipeFrequency.jsonSchema = {
   type: 'object',
   properties: {
+    id: { type: 'integer' },
     userId: { type: 'integer' },
     recipeId: { type: 'integer' },
     frequency: { type: 'integer' }
+  }
+}
+
+RecipeFrequency.relationMappings = {
+  user: {
+    relation: Model.BelongsToOneRelation,
+    modelClass: User,
+    join: {
+      from: 'recipeFrequency.userId',
+      to: 'user.id'
+    }
+  },
+  recipe: {
+    relation: Model.BelongsToOneRelation,
+    modelClass: Recipe,
+    join: {
+      from: 'recipeFrequency.recipeId',
+      to: 'recipe.id'
+    }
   }
 }
 
@@ -93,28 +113,67 @@ User.jsonSchema = {
   }
 }
 User.relationMappings = {
-  ingredients: {
+  ingredientsAvoided: {
     relation: Model.ManyToManyRelation,
     modelClass: Ingredient,
     join: {
       from: 'user.id',
       through: {
-        from: 'userIntolerance.userId',
-        to: 'userIntolerance.ingredientId'
+        from: 'ingredientAvoid.userId',
+        to: 'ingredientAvoid.ingredientName'
       },
-      to: 'ingredient.id'
+      to: 'ingredient.name'
     }
   },
-  mealPreference: {
+  mealPreferences: {
     relation: Model.ManyToManyRelation,
     modelClass: MealPreference,
     join: {
       from: 'user.id',
       through: {
         from: 'userMealPreference.userId',
-        to: 'userMealPreference.mealPreferenceId'
+        to: 'userMealPreference.mealPreferenceName'
       },
-      to: 'mealPreference.id'
+      to: 'mealPreference.name'
+    }
+  },
+  userIntolerances: {
+    relation: Model.ManyToManyRelation,
+    modelClass: Ingredient,
+    join: {
+      from: 'user.id',
+      through: {
+        from: 'userIntolerance.userId',
+        to: 'userIntolerance.ingredientName'
+      },
+      to: 'ingredient.name'
+    }
+  }
+}
+
+UserIntolerance.tableName = 'userIntolerance'
+UserIntolerance.jsonSchema = {
+  type: 'object',
+  properties: {
+    userId: { type: 'integer' },
+    ingredientName: { type: 'string' }
+  }
+}
+UserIntolerance.relationMappings = {
+  user: {
+    relation: Model.BelongsToOneRelation,
+    modelClass: User,
+    join: {
+      from: 'userIntolerance.userId',
+      to: 'user.id'
+    }
+  },
+  ingredient: {
+    relation: Model.BelongsToOneRelation,
+    modelClass: Ingredient,
+    join: {
+      from: 'userIntolerance.ingredientName',
+      to: 'ingredient.name'
     }
   }
 }
@@ -132,9 +191,9 @@ MealPreference.relationMappings = {
     relation: Model.ManyToManyRelation,
     modelClass: User,
     join: {
-      from: 'mealPreference.id',
+      from: 'mealPreference.name',
       through: {
-        from: 'userMealPreference.mealPreferenceId',
+        from: 'userMealPreference.mealPreferenceName',
         to: 'userMealPreference.userId'
       },
       to: 'user.id'
@@ -147,7 +206,7 @@ UserMealPreference.jsonSchema = {
   type: 'object',
   properties: {
     userId: { type: 'integer' },
-    mealPreferenceId: { type: 'integer' },
+    mealPreferenceName: { type: 'integer' },
     value: { type: 'number' }
   }
 }
@@ -156,97 +215,97 @@ Template.tableName = 'template'
 Template.jsonSchema = {
   type: 'object',
   properties: {
-    mondayLunchId: { type: 'integer' },
-    mondayDinnerId: { type: 'integer' },
-    tuesdayLunchId: { type: 'integer' },
-    tuesdayDinnerId: { type: 'integer' },
-    wednesdayLunchId: { type: 'integer' },
-    wednesdayDinnerId: { type: 'integer' },
-    thursdayLunchId: { type: 'integer' },
-    thursdayDinnerId: { type: 'integer' },
-    fridayLunchId: { type: 'integer' },
-    fridayDinnerId: { type: 'integer' }
+    mondayLunch: { type: 'string' },
+    mondayDinner: { type: 'string' },
+    tuesdayLunch: { type: 'string' },
+    tuesdayDinner: { type: 'string' },
+    wednesdayLunch: { type: 'string' },
+    wednesdayDinner: { type: 'string' },
+    thursdayLunch: { type: 'string' },
+    thursdayDinner: { type: 'string' },
+    fridayLunch: { type: 'string' },
+    fridayDinner: { type: 'string' }
   }
 }
 Template.relationMappings = {
   mondayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.mondayLunchId',
-      to: 'mealType.id'
+      from: 'template.mondayLunch',
+      to: 'mealType.name'
     }
   },
   mondayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.mondayDinnerId',
-      to: 'mealType.id'
+      from: 'template.mondayDinner',
+      to: 'mealType.name'
     }
   },
   tuesdayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.tuesdayLunchId',
-      to: 'mealType.id'
+      from: 'template.tuesdayLunch',
+      to: 'mealType.name'
     }
   },
   tuesdayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.tuesdayDinnerId',
-      to: 'mealType.id'
+      from: 'template.tuesdayDinner',
+      to: 'mealType.name'
     }
   },
   wednesdayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.wednesdayLunchId',
-      to: 'mealType.id'
+      from: 'template.wednesdayLunch',
+      to: 'mealType.name'
     }
   },
   wednesdayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.wednesdayDinnerId',
-      to: 'mealType.id'
+      from: 'template.wednesdayDinner',
+      to: 'mealType.name'
     }
   },
   thursdayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.thursdayLunchId',
-      to: 'mealType.id'
+      from: 'template.thursdayLunch',
+      to: 'mealType.name'
     }
   },
   thursdayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.thursdayDinnerId',
-      to: 'mealType.id'
+      from: 'template.thursdayDinner',
+      to: 'mealType.name'
     }
   },
   fridayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.fridayLunchId',
-      to: 'mealType.id'
+      from: 'template.fridayLunch',
+      to: 'mealType.name'
     }
   },
   fridayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: MealType,
     join: {
-      from: 'template.fridayDinnerId',
-      to: 'mealType.id'
+      from: 'template.fridayDinner',
+      to: 'mealType.name'
     }
   }
 }
@@ -255,7 +314,6 @@ MealType.tableName = 'mealType'
 MealType.jsonSchema = {
   type: 'object',
   properties: {
-    id: { type: 'integer' },
     name: { type: 'string' }
   }
 }
@@ -265,21 +323,21 @@ Menu.jsonSchema = {
   type: 'object',
   properties: {
     userId: { type: 'integer' },
-    mondayLunchId: { type: 'integer' },
-    mondayDinnerId: { type: 'integer' },
-    tuesdayLunchId: { type: 'integer' },
-    tuesdayDinnerId: { type: 'integer' },
-    wednesdayLunchId: { type: 'integer' },
-    wednesdayDinnerId: { type: 'integer' },
-    thursdayLunchId: { type: 'integer' },
-    thursdayDinnerId: { type: 'integer' },
-    fridayLunchId: { type: 'integer' },
-    fridayDinnerId: { type: 'integer' }
+    mondayLunch: { type: 'string' },
+    mondayDinner: { type: 'string' },
+    tuesdayLunch: { type: 'string' },
+    tuesdayDinner: { type: 'string' },
+    wednesdayLunch: { type: 'string' },
+    wednesdayDinner: { type: 'string' },
+    thursdayLunch: { type: 'string' },
+    thursdayDinner: { type: 'string' },
+    fridayLunch: { type: 'string' },
+    fridayDinner: { type: 'string' }
   }
 }
 Menu.relationMappings = {
   user: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: User,
     join: {
       from: 'menu.userId',
@@ -287,82 +345,82 @@ Menu.relationMappings = {
     }
   },
   mondayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.mondayLunchId',
+      from: 'menu.mondayLunch',
       to: 'recipe.id'
     }
   },
   mondayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.mondayDinnerId',
+      from: 'menu.mondayDinner',
       to: 'recipe.id'
     }
   },
   tuesdayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.tuesdayLunchId',
+      from: 'menu.tuesdayLunch',
       to: 'recipe.id'
     }
   },
   tuesdayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.tuesdayDinnerId',
+      from: 'menu.tuesdayDinner',
       to: 'recipe.id'
     }
   },
   wednesdayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.wednesdayLunchId',
+      from: 'menu.wednesdayLunch',
       to: 'recipe.id'
     }
   },
   wednesdayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.wednesdayDinnerId',
+      from: 'menu.wednesdayDinner',
       to: 'recipe.id'
     }
   },
   thursdayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.thursdayLunchId',
+      from: 'menu.thursdayLunch',
       to: 'recipe.id'
     }
   },
   thursdayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.thursdayDinnerId',
+      from: 'menu.thursdayDinner',
       to: 'recipe.id'
     }
   },
   fridayLunch: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.fridayLunchId',
+      from: 'menu.fridayLunch',
       to: 'recipe.id'
     }
   },
   fridayDinner: {
-    relation: Model.belongsToOneRelation,
+    relation: Model.BelongsToOneRelation,
     modelClass: Recipe,
     join: {
-      from: 'menu.fridayDinnerId',
+      from: 'menu.fridayDinner',
       to: 'recipe.id'
     }
   }
@@ -370,8 +428,12 @@ Menu.relationMappings = {
 
 module.exports = {
   Recipe,
+  RecipeFrequency,
   Ingredient,
   Template,
   Menu,
-  User
+  User,
+  MealType,
+  MealPreference,
+  UserIntolerance
 }

@@ -4,9 +4,7 @@
   "version": "0.0.0",
   "homepage": "",
   "main": "src",
-  "keywords": [
-    "feathers"
-  ],
+  "keywords": ["feathers"],
   "author": {
     "name": "Miguel",
     "email": "miguel@redradix.com"
@@ -24,7 +22,7 @@
   "scripts": {
     "test": "npm run eslint && npm run mocha",
     "eslint": "eslint src/. test/. --config .eslintrc.json",
-    "start": "node src/",
+    "start": "nodemon src/",
     "mocha": "mocha test/ --recursive",
     "migrate": "node ./src/tools/migrate"
   },
