@@ -137,7 +137,7 @@ User.relationMappings = {
       to: 'mealPreference.name'
     }
   },
-  userIntolerances: {
+  intolerances: {
     relation: Model.ManyToManyRelation,
     modelClass: Ingredient,
     join: {
@@ -147,6 +147,14 @@ User.relationMappings = {
         to: 'userIntolerance.ingredientName'
       },
       to: 'ingredient.name'
+    }
+  },
+  template: {
+    relation: Model.HasOneRelation,
+    modelClass: Template,
+    join: {
+      from: 'user.templateId',
+      to: 'template.id'
     }
   }
 }

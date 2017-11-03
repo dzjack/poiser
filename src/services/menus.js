@@ -9,18 +9,19 @@ module.exports = service({
     this.app = app
   },
   async create(params) {
-    const user = await this.app
-      .service('users')
-      .get(params.userId || 1, { query: {} })
-    console.log('user', user)
-    const lunchsQuery = RecipeModel.query()
+    const user = await this.app.service('users').get(params.userId || 1)
+    const intolerances = user.intolerances.map(i => i.name)
+    const lunchs = RecipeModel.query()
       // Filtro por receta
-      //.where('cookingTime', '<', user.cookingTime)
+      .where('cookingTime', '<', user.cookingTime)
       // Filtro por ingredientes
-      .join('recipeIngredients')
-      .whereNotIn('recipeIngredient.ingredientName', user.userIntolerances)
-    console.log('query', lunchsQuery.toString())
-    const lunchs = await lunchsQuery
-    console.log('mondayRecipe', mondayRecipe)
+      .joinRelation('ingredients')
+      .whereNotIn('ingredients.name', intolerances)
+      // Filtro por mealtype
+      .joinRelation('template.mondayLunch as mealType')
+      .where('mealType.name', '=', 'recipe.mealType')
+      .where('template.')
+      .groupBy('recipe.id')
+    return await lunchs
   }
 })

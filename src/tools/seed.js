@@ -8,10 +8,10 @@ const templates = require('./templates')
 
 async function seed() {
   await createMealTypes()
-  await createTemplates()
+  const [template] = await createTemplates()
   await createMealPreferences()
   const recipes = await createRecipes()
-  const [miguel] = await createUsers(users)
+  const [miguel] = await createUsers(users, template)
   await recipesFrequency(recipes, miguel)
 }
 
@@ -44,8 +44,13 @@ async function createRecipes(user) {
   return Promise.all(
     recipes.map(async function(recipe) {
       try {
-        const ingredientIds = await createIngredients(recipe.ingredients)
-        return await recipeService.create(recipe)
+        const recipeModel = await recipeService.create(recipe)
+        await Promise.all(
+          recipe.ingredients.map(i =>
+            recipeModel.$relatedQuery('ingredients').insert({ name: i })
+          )
+        )
+        return recipeModel
       } catch (e) {
         console.log('error creating recipes', e)
       }
@@ -78,11 +83,18 @@ async function createIngredients(ingredients) {
   )
 }
 
-async function createUsers(users) {
+async function createUsers(users, template) {
   const userService = app.service('users')
   return Promise.all(
-    users.map(function(user) {
-      return userService.create(user)
+    users.map(async function(user) {
+      const userModel = await userService.create(user)
+      await userModel.$relatedQuery('template').relate(template)
+      await Promise.all(
+        user.intolerances.map(i =>
+          userModel.$relatedQuery('intolerances').relate(i)
+        )
+      )
+      return userModel
     })
   )
 }
